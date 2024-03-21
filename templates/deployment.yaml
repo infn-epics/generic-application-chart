@@ -27,8 +27,9 @@ spec:
       serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
       securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
-      {{ if .Values.gitRepoConfig.url }}
       initContainers:
+      {{ if .Values.gitRepoConfig.url }}
+
       - name: init-config-container-git
         image: baltig.infn.it:4567/epics-containers/container-init
         command: 
@@ -67,7 +68,6 @@ spec:
           mountPath: /tmp
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
-      initContainers:
       - name: init-app-container-git
         image: baltig.infn.it:4567/epics-containers/container-init
         command: 
