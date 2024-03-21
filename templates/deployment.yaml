@@ -29,7 +29,7 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
       {{ if .Values.gitRepoConfig.url }}
       initContainers:
-      - name: init-app-container-git
+      - name: init-config-container-git
         image: baltig.infn.it:4567/epics-containers/container-init
         command: 
         - sh 
@@ -60,7 +60,7 @@ spec:
           ls /tmp
         imagePullPolicy: IfNotPresent
         volumeMounts:
-        - name: git-volume
+        - name: config-volume
           mountPath: /tmp
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
@@ -94,9 +94,12 @@ spec:
 
           # chmod a+w,a+r -R /tmp
           ls /tmp
+          {{- if .Values.gitRepoApp.exec }}
+          {{ .Values.gitRepoApp.exec }}
+          {{- endif }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
-        - name: git-volume
+        - name: app-volume
           mountPath: /tmp
     {{ end }}
       containers:
@@ -104,6 +107,23 @@ spec:
           
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .gitRepoApp.exec }}
+          command: 
+            - sh 
+            - -c
+            - |
+              {{ .gitRepoApp.exec }}
+          {{- end }}
+          {{- if .Values.gitRepoApp.url}}
+          volumeMounts:
+            - name: app-volume
+              mountPath: /app
+          {{- end}}
+          {{- if .Values.gitRepoConfig.url}}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          {{- end}}
           ports:
             - name: http
               containerPort: 80
@@ -130,8 +150,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.gitRepoConfig.url .Values.gitRepoApp.url}}
-        - name: git-volume
+      {{- if .Values.gitRepoConfig.url}}
+        - name: config-volume
           persistentVolumeClaim:
-            claimName: {{ include "generic-application-chart.release" . }}-git
+            claimName: {{ include "generic-application-chart.release" . }}-config
+      {{- end }}
+      {{- if .Values.gitRepoApp.url}}
+        - name: app-volume
+          persistentVolumeClaim:
+            claimName: {{ include "generic-application-chart.release" . }}-app
       {{- end }}

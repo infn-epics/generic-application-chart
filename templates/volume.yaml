@@ -1,19 +1,18 @@
 # IOCS can use a PVC as a data volume, or mount the host filesystem
 
-{{- if .Values.dataVolume.pvc }}
+{{- if  .Values.gitRepoApp.url  }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ include "generic-application-chart.release" . }}-data
+  name: {{ include "generic-application-chart.release" . }}-app
   labels:
     app: {{ include "generic-application-chart.release" . }}
-    beamline: {{ .Values.beamline | quote }}
 spec:
   accessModes:
-    - {{ .Values.dataVolume.accessMode }}
+    - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.dataVolume.size }}
+      storage: {{ .Values.gitRepoApp.size }}
 
 ---
 {{- end }}
@@ -22,10 +21,9 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ include "generic-application-chart.release" . }}-git
+  name: {{ include "generic-application-chart.release" . }}-config
   labels:
     app: {{ include "generic-application-chart.release" . }}
-    beamline: {{ .Values.beamline | quote }}
 spec:
   accessModes:
     - ReadWriteOnce

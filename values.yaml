@@ -84,10 +84,20 @@ gitRepoApp:
     url:
     path: .
     branch: main
-    exec: ## commands to execute after the 
+    exec: ## commands to execute after the git clone .. i.e pip install..
+    size: 8Mi
     
 gitRepoConfig:
   url: 
   path: .
   branch: main
-  exec: 
+  exec: ## commands to execute after git clone 
+  size: 8Mi
+
+exec: |
+      if [ -x /app/start.sh ] ; then
+        ## if a start.sh is found in gitRepoApp launch it
+        /app/start.sh
+      else
+        echo "YOU SHOULD SPECIFY COMMAND LINE" ## command line to execute
+      fi
