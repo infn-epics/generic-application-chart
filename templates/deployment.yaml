@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "generic-application-chart.fullname" . }}
+  labels:
+    {{- include "generic-application-chart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "generic-application-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "generic-application-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
+      securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+      {{ if .Values.gitRepoConfig.url }}
+      initContainers:
+      - name: init-app-container-git
+        image: baltig.infn.it:4567/epics-containers/container-init
+        command: 
+        - sh 
+        - -c
+        - |
+          id=`id`
+          cd /tmp
+          ls -latr
+          echo "ID $id"
+          if [ -n "{{ .Values.gitRepoConfig.branch }}" ];then
+            git clone -b {{ .Values.gitRepoConfig.branch }} {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+          else
+            git clone {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+          fi
+
+          if [ -d temp-config/{{ .Values.gitRepoConfig.path}} ];then
+            if [ "{{ .Values.gitRepoConfig.path }}" == "." ];then
+                mv temp-config/* /tmp/
+            else
+              mv temp-config/{{ .Values.gitRepoConfig.path}}/* /tmp/
+              rm -rf temp-config
+            fi
+          else
+            mv temp-config/* /tmp/
+          fi
+
+          # chmod a+w,a+r -R /tmp
+          ls /tmp
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: git-volume
+          mountPath: /tmp
+    {{ end }}
+    {{ if .Values.gitRepoApp.url }}
+      initContainers:
+      - name: init-app-container-git
+        image: baltig.infn.it:4567/epics-containers/container-init
+        command: 
+        - sh 
+        - -c
+        - |
+          id=`id`
+          cd /tmp
+          ls -latr
+          echo "ID $id"
+          if [ -n "{{ .Values.gitRepoApp.branch }}" ];then
+            git clone -b {{ .Values.gitRepoApp.branch }} {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+          else
+            git clone {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+          fi
+
+          if [ -d temp-config/{{ .Values.gitRepoApp.path}} ];then
+            if [ "{{ .Values.gitRepoApp.path }}" == "." ];then
+                mv temp-config/* /tmp/
+            else
+              mv temp-config/{{ .Values.gitRepoApp.path}}/* /tmp/
+              rm -rf temp-config
+            fi
+          else
+            mv temp-config/* /tmp/
+          fi
+
+          # chmod a+w,a+r -R /tmp
+          ls /tmp
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: git-volume
+          mountPath: /tmp
+    {{ end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.gitRepoConfig.url .Values.gitRepoApp.url}}
+        - name: git-volume
+          persistentVolumeClaim:
+            claimName: {{ include "generic-application-chart.release" . }}-git
+      {{- end }}
