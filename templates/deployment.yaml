@@ -96,7 +96,7 @@ spec:
           ls /tmp
           {{- if .Values.gitRepoApp.exec }}
           {{ .Values.gitRepoApp.exec }}
-          {{- endif }}
+          {{- end }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: app-volume
