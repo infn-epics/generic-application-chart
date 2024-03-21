@@ -4,9 +4,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ include "generic-application-chart.release" . }}-app
+  name: {{ include "generic-application-chart.fullname" . }}-app
   labels:
-    app: {{ include "generic-application-chart.release" . }}
+    app: {{ include "generic-application-chart.fullname" . }}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -21,9 +21,9 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ include "generic-application-chart.release" . }}-config
+  name: {{ include "generic-application-chart.fullname" . }}-config
   labels:
-    app: {{ include "generic-application-chart.release" . }}
+    app: {{ include "generic-application-chart.fullname" . }}
 spec:
   accessModes:
     - ReadWriteOnce
