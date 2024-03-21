@@ -36,8 +36,16 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
-  port: 80
+    type: ClusterIP
+    ports:
+      - name: tcp
+        port: 80
+        targetport: 80
+        targetname: tcp
+        protocol: TCP
+        type: ClusterIP
+
+
 
 ingress:
   enabled: false
@@ -50,6 +58,7 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
+          svcport: 80
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:

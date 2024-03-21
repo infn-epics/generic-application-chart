@@ -124,18 +124,13 @@ spec:
             - name: config-volume
               mountPath: /config
           {{- end}}
+          {{- range .service.ports}}
           ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            - name: {{ .targetname }}
+              containerPort: {{.targetport}}
+              protocol: {{.protocol}}
+          {{- end }}
+          
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
