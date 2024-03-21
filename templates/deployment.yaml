@@ -122,13 +122,13 @@ spec:
             - name: app-volume
               mountPath: /app
           {{- end}}
-          {{- if .Values.gitRepoConfig.url}}
+          {{- if .Values.gitRepoConfig.url }}
           volumeMounts:
             - name: config-volume
               mountPath: /config
           {{- end}}
-          {{- range .service.ports}}
           ports:
+          {{- range .Values.service.ports }}
             - name: {{ .targetname }}
               containerPort: {{.targetport}}
               protocol: {{.protocol}}
@@ -151,10 +151,10 @@ spec:
       {{- if .Values.gitRepoConfig.url}}
         - name: config-volume
           persistentVolumeClaim:
-            claimName: {{ include "generic-application-chart.release" . }}-config
+            claimName: {{ include "generic-application-chart.fullname" . }}-config
       {{- end }}
       {{- if .Values.gitRepoApp.url}}
         - name: app-volume
           persistentVolumeClaim:
-            claimName: {{ include "generic-application-chart.release" . }}-app
+            claimName: {{ include "generic-application-chart.fullname" . }}-app
       {{- end }}
