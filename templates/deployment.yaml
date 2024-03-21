@@ -117,13 +117,13 @@ spec:
             - |
               {{ .Values.exec }}
           {{- end }}
-          {{- if .Values.gitRepoApp.url}}
           volumeMounts:
+
+          {{- if .Values.gitRepoApp.url}}
             - name: app-volume
               mountPath: /app
           {{- end}}
           {{- if .Values.gitRepoConfig.url }}
-          volumeMounts:
             - name: config-volume
               mountPath: /config
           {{- end}}
@@ -148,6 +148,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
       {{- if .Values.gitRepoConfig.url}}
         - name: config-volume
           persistentVolumeClaim:
