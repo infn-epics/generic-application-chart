@@ -58,6 +58,9 @@ spec:
 
           # chmod a+w,a+r -R /tmp
           ls /tmp
+          {{- if .Values.gitRepoConfig.exec }}
+          {{ .Values.gitRepoConfig.exec }}
+          {{- end }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: config-volume
@@ -107,12 +110,12 @@ spec:
           
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .gitRepoApp.exec }}
+          {{- if .Values.exec }}
           command: 
             - sh 
             - -c
             - |
-              {{ .gitRepoApp.exec }}
+              {{ .Values.exec }}
           {{- end }}
           {{- if .Values.gitRepoApp.url}}
           volumeMounts:
