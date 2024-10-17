@@ -32,6 +32,20 @@ spec:
 
       - name: init-config-container-git
         image: baltig.infn.it:4567/epics-containers/container-init
+        env:
+        {{- range .Values.nfsMounts }}
+        - name: {{ .name | upper }}_SERVER
+          value: {{ .server | quote }}
+        - name: {{ .name | upper }}_SERVER_PATH
+          value: {{ .path | quote }}
+        - name: {{ .name | upper }}_DIR
+          value: {{ .mountPath | quote }}
+        {{- end }}
+          
+        envFrom:
+        - configMapRef:
+            name: proxy-config
+
         command: 
         - sh 
         - -c
@@ -72,6 +86,19 @@ spec:
     {{ if .Values.gitRepoApp.url }}
       - name: init-app-container-git
         image: baltig.infn.it:4567/epics-containers/container-init
+        {{- range .Values.nfsMounts }}
+        - name: {{ .name | upper }}_SERVER
+          value: {{ .server | quote }}
+        - name: {{ .name | upper }}_SERVER_PATH
+          value: {{ .path | quote }}
+        - name: {{ .name | upper }}_DIR
+          value: {{ .mountPath | quote }}
+        {{- end }}
+        
+        envFrom:
+        - configMapRef:
+            name: proxy-config
+            
         command: 
         - sh 
         - -c
