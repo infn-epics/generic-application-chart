@@ -31,7 +31,7 @@ spec:
       {{ if .Values.gitRepoConfig.url }}
 
       - name: init-config-container-git
-        image: baltig.infn.it:4567/epics-containers/container-init          
+        image: baltig.infn.it:4567/epics-containers/container-init 
         env:
           {{- if .Values.http_proxy }}
           - name: HTTP_PROXY
@@ -85,31 +85,22 @@ spec:
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
       - name: init-app-container-git
-        image: baltig.infn.it:4567/epics-containers/container-init
-        {{- range .Values.nfsMounts }}
-        - name: {{ .name | upper }}_SERVER
-          value: {{ .server | quote }}
-        - name: {{ .name | upper }}_SERVER_PATH
-          value: {{ .path | quote }}
-        - name: {{ .name | upper }}_DIR
-          value: {{ .mountPath | quote }}
-        {{- end }}
-        
+        image: baltig.infn.it:4567/epics-containers/container-init  
         env:
-          {{- if .Values.http_proxy }}
-          - name: HTTP_PROXY
-            value: {{.Values.http_proxy | quote}} 
-          {{- end}}
-          {{- if .Values.https_proxy }}
-          - name: HTTPS_PROXY
-            value: {{.Values.https_proxy | quote}} 
-          {{- end}}
-          {{- if .Values.no_proxy }}
-          - name: NO_PROXY
-            value: {{.Values.no_proxy | quote}} 
-          {{- end}}
+        {{- if .Values.http_proxy }}
+        - name: HTTP_PROXY
+          value: {{.Values.http_proxy | quote}} 
+        {{- end}}
+        {{- if .Values.https_proxy }}
+        - name: HTTPS_PROXY
+          value: {{.Values.https_proxy | quote}} 
+        {{- end}}
+        {{- if .Values.no_proxy }}
+        - name: NO_PROXY
+          value: {{.Values.no_proxy | quote}} 
+        {{- end}}
 
-        command: 
+        command:
         - sh 
         - -c
         - |
@@ -143,7 +134,9 @@ spec:
         volumeMounts:
         - name: app-volume
           mountPath: /tmp
-    {{ end }}
+    
+    {{- end }}
+
       containers:
         - name: {{ .Chart.Name }}
           
