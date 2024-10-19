@@ -99,6 +99,7 @@ gitRepoConfig:
   exec: ## commands to execute after git clone 
   size: 8Mi
 
+staticIP:
 exec: |
       if [ -x /app/start.sh ] ; then
         ## if a start.sh is found in gitRepoApp launch it
