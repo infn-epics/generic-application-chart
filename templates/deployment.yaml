@@ -138,11 +138,7 @@ spec:
               git clone {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
             fi
           fi
-          if [ -n "{{ .Values.gitRepoApp.branch }}" ];then
-            git clone -b {{ .Values.gitRepoApp.branch }} {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
-          else
-            git clone {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
-          fi
+          
 
           if [ -d temp-config/{{ .Values.gitRepoApp.path}} ];then
             if [ "{{ .Values.gitRepoApp.path }}" == "." ];then
