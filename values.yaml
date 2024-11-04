@@ -91,6 +91,7 @@ gitRepoApp:
     branch: main
     exec: ## commands to execute after the git clone .. i.e pip install..
     size: 8Mi
+    token:
     
 gitRepoConfig:
   url: 
@@ -98,6 +99,7 @@ gitRepoConfig:
   branch: main
   exec: ## commands to execute after git clone 
   size: 8Mi
+  token:
 
 staticIP:
 exec: |
