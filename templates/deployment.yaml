@@ -120,6 +120,9 @@ spec:
           ls -latr
           echo "ID $id repository {{ .Values.gitRepoApp.url }} "
           # Cloning logic with PAT
+          if [ -d temp-config ];then
+            rm -rf temp-config
+          fi
           if [ -n "{{ .Values.gitRepoApp.token }}" ]; then
             echo "Cloning repository using Personal Access Token"
             if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
