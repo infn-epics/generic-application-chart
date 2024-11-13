@@ -61,16 +61,16 @@ spec:
           if [ -n "{{ .Values.gitRepoConfig.token }}" ]; then
             echo "Cloning repository using Personal Access Token"
             if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
-              git clone -b {{ .Values.gitRepoConfig.branch }} https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+              git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
             else
-              git clone https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+              git clone --depth 1 https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
             fi
           else
             echo "Cloning repository unauthenticated"
             if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
-              git clone -b {{ .Values.gitRepoConfig.branch }} {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+              git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
             else
-              git clone {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+              git clone --depth 1 {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
             fi
           fi
           
@@ -126,16 +126,16 @@ spec:
           if [ -n "{{ .Values.gitRepoApp.token }}" ]; then
             echo "Cloning repository using Personal Access Token"
             if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
-              git clone -b {{ .Values.gitRepoApp.branch }} https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+              git clone --depth 1  -b {{ .Values.gitRepoApp.branch }} https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
             else
-              git clone https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+              git clone --depth 1 https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
             fi
           else
             echo "Cloning repository unauthenticated"
             if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
-              git clone -b {{ .Values.gitRepoApp.branch }} {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+              git clone --depth 1 -b {{ .Values.gitRepoApp.branch }} {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
             else
-              git clone {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+              git clone --depth 1 {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
             fi
           fi
           
@@ -223,11 +223,10 @@ spec:
       volumes:
       {{- if .Values.gitRepoConfig.url}}
         - name: config-volume
-          persistentVolumeClaim:
-            claimName: {{ include "generic-application-chart.fullname" . }}-config
+          emptyDir: {}
       {{- end }}
       {{- if .Values.gitRepoApp.url}}
         - name: app-volume
-          persistentVolumeClaim:
-            claimName: {{ include "generic-application-chart.fullname" . }}-app
+          emptyDir: {}
+         
       {{- end }}
