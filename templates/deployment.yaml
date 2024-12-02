@@ -27,25 +27,24 @@ spec:
       serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
       securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
+      {{ if or .Values.gitRepoApp.url .Values.gitRepoConfig.url }}
       initContainers:
       {{ if .Values.gitRepoConfig.url }}
-
       - name: init-config-container-git
-        image: baltig.infn.it:4567/epics-containers/container-init 
+        image: baltig.infn.it:4567/epics-containers/container-init
         env:
           {{- if .Values.http_proxy }}
           - name: HTTP_PROXY
-            value: {{.Values.http_proxy | quote}} 
-          {{- end}}
+            value: {{ .Values.http_proxy | quote}} 
+          {{- end }}
           {{- if .Values.https_proxy }}
           - name: HTTPS_PROXY
             value: {{.Values.https_proxy | quote}} 
-          {{- end}}
+          {{- end }}
           {{- if .Values.no_proxy }}
           - name: NO_PROXY
-            value: {{.Values.no_proxy | quote}} 
-          {{- end}}
-
+            value: {{ .Values.no_proxy | quote}} 
+          {{- end }}
         command: 
         - sh 
         - -c
@@ -96,7 +95,7 @@ spec:
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
       - name: init-app-container-git
-        image: baltig.infn.it:4567/epics-containers/container-init  
+        image: baltig.infn.it:4567/epics-containers/container-init
         env:
         {{- if .Values.http_proxy }}
         - name: HTTP_PROXY
@@ -162,6 +161,7 @@ spec:
           mountPath: /tmp
     
     {{- end }}
+    {{- end }}
 
       containers:
         - name: {{ .Chart.Name }}
@@ -181,13 +181,17 @@ spec:
           - name: NO_PROXY
             value: {{.Values.no_proxy | quote}} 
           {{- end}}
+          {{- range $envVar := .Values.env }}
+          - name: {{ $envVar.name }}
+            value: {{ $envVar.value | quote }}
+          {{- end }}
           {{- if .Values.exec }}
           command: 
             - sh 
             - -c
             - |
               cd /app
-              {{ .Values.exec }}
+              {{ .Values.exec | nindent 14}}
           {{- end }}
           volumeMounts:
 
@@ -228,5 +232,4 @@ spec:
       {{- if .Values.gitRepoApp.url}}
         - name: app-volume
           emptyDir: {}
-         
       {{- end }}
