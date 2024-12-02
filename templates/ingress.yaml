@@ -50,7 +50,7 @@ spec:
               service:
                 name: {{ $fullName }}
                 port:
-                  number: {{ .svcport }}
+                  number: 80
           {{- end }}
     {{- end }}
 {{- end }}
