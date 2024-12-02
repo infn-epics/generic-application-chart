@@ -38,12 +38,12 @@ securityContext: {}
 service:
     type: ClusterIP
     ports:
-      - name: tcp
-        port: 80
-        targetport: 80
-        targetname: tcp
-        protocol: TCP
-        type: ClusterIP
+      # - name: tcp
+      #   port: 80
+      #   targetport: 80
+      #   targetname: tcp
+      #   protocol: TCP
+      #   type: ClusterIP
 
 
 
