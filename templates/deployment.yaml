@@ -203,13 +203,16 @@ spec:
             - name: config-volume
               mountPath: /config
           {{- end}}
+          {{- if .Values.service.ports }}
+          {{- if gt (len .Values.service.ports) 0 }}
           ports:
           {{- range .Values.service.ports }}
             - name: {{ .targetname }}
               containerPort: {{.targetport}}
               protocol: {{.protocol}}
           {{- end }}
-          
+          {{- end }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12}}
       {{- with .Values.nodeSelector }}
