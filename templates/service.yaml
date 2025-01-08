@@ -9,12 +9,16 @@ spec:
   {{- if .Values.staticIP }}
   clusterIP: {{.Values.staticIP}}
   {{- end }}
+  {{- if .Values.service.ports }}
+  {{- if gt (len .Values.service.ports) 0 }}
   ports:
   {{- range .Values.service.ports }}
     - port: {{ .port }}
       targetPort: {{ .targetport }}
       protocol: {{ .protocol }}
       name: {{ .name }}
-  {{- end}}
+  {{- end }}
+  {{- end }}
+  {{- end }}
   selector:
     {{- include "generic-application-chart.selectorLabels" . | nindent 4 }}
