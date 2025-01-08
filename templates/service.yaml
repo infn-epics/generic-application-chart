@@ -19,7 +19,6 @@ spec:
       protocol: {{ .protocol }}
       name: {{ .name }}
   {{- end }}
-  {{- end }}
   selector:
     {{- include "generic-application-chart.selectorLabels" . | nindent 4 }}
 {{- end }}
