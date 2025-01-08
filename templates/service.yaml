@@ -1,3 +1,6 @@
+{{- if .Values.service.ports }}
+{{- if gt (len .Values.service.ports) 0 }}
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,8 +12,6 @@ spec:
   {{- if .Values.staticIP }}
   clusterIP: {{.Values.staticIP}}
   {{- end }}
-  {{- if .Values.service.ports }}
-  {{- if gt (len .Values.service.ports) 0 }}
   ports:
   {{- range .Values.service.ports }}
     - port: {{ .port }}
@@ -19,6 +20,7 @@ spec:
       name: {{ .name }}
   {{- end }}
   {{- end }}
-  {{- end }}
   selector:
     {{- include "generic-application-chart.selectorLabels" . | nindent 4 }}
+{{- end }}
+{{- end }}
