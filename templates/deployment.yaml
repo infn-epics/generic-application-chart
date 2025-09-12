@@ -190,8 +190,11 @@ spec:
             - sh 
             - -c
             - |
+            {{- if .Values.gitRepoApp.url}}
               cd /app
-              {{ .Values.exec | nindent 14}}
+            {{- end}}
+            {{ .Values.exec | nindent 14}}
+
           {{- end }}
           volumeMounts:
 
