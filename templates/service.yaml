@@ -1,5 +1,4 @@
-{{- if .Values.service.ports }}
-{{- if gt (len .Values.service.ports) 0 }}
+{{- if or .Values.service.ports .Values.service.port }}
 
 apiVersion: v1
 kind: Service
@@ -8,18 +7,23 @@ metadata:
   labels:
     {{- include "generic-application-chart.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.service.type | default "ClusterIP" }}
   {{- if .Values.staticIP }}
   clusterIP: {{.Values.staticIP}}
   {{- end }}
   ports:
+  {{- if .Values.service.ports }}
   {{- range .Values.service.ports }}
     - port: {{ .port }}
       targetPort: {{ .targetport }}
       protocol: {{ .protocol }}
       name: {{ .name }}
   {{- end }}
+  {{- else if .Values.service.port }}
+    - port: {{ .Values.service.port | int }}
+      targetPort: {{ .Values.service.targetPort | default .Values.service.port | int }}
+      protocol: {{ .Values.service.protocol | default "TCP" }}
+      name: {{ .Values.service.name | default "http" }}
+  {{- end }}
   selector:
     {{- include "generic-application-chart.selectorLabels" . | nindent 4 }}
-{{- end }}
-{{- end }}
