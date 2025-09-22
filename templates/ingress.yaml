@@ -7,11 +7,14 @@
   {{- end }}
 {{- end }}
 {{- if .Values.ingress.secure }}
-  {{- if not (hasKey .Values.ingress.annotations "cert-manager.io/cluster-issuer") }}
-  {{- $_ := set .Values.ingress.annotations "cert-manager.io/cluster-issuer" "letsencrypt-prod"}}
+  {{- if and .Values.certManager (not (hasKey .Values.ingress.annotations "cert-manager.io/cluster-issuer")) }}
+  {{- $_ := set .Values.ingress.annotations "cert-manager.io/cluster-issuer" (.Values.certManager.clusterIssuer | default "letsencrypt-prod")}}
   {{- end }}
-  {{- if not (hasKey .Values.ingress.annotations "nginx.ingress.kubernetes.io/ssl-redirect") }}
+  {{- if and .Values.nginx (not (hasKey .Values.ingress.annotations "nginx.ingress.kubernetes.io/ssl-redirect")) }}
   {{- $_ := set .Values.ingress.annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true"}}
+  {{- end }}
+  {{- if and .Values.openshift (not (hasKey .Values.ingress.annotations "route.openshift.io/termination")) }}
+  {{- $_ := set .Values.ingress.annotations "route.openshift.io/termination" "edge"}}
   {{- end }}
 {{- end }}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
@@ -63,10 +66,15 @@ spec:
             pathType: {{ .pathType }}
             {{- end }}
             backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
                 name: {{ $fullName }}
                 port:
                   number: {{ $svcPort }}
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+              {{- end }}
           {{- end }}
     {{- end }}
 {{- end }}
