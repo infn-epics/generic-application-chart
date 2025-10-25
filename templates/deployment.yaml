@@ -31,7 +31,7 @@ spec:
       initContainers:
       {{ if .Values.gitRepoConfig.url }}
       - name: init-config-container-git
-        image: {{ .Values.initimage }}
+        image: {{ .Values.initimage | default "baltig.infn.it:4567/epics-containers/container-init" }}
         env:
           {{- if .Values.http_proxy }}
           - name: HTTP_PROXY
