@@ -95,7 +95,7 @@ spec:
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
       - name: init-app-container-git
-        image: baltig.infn.it:4567/epics-containers/container-init
+        image: {{ .Values.initimage | default "baltig.infn.it:4567/epics-containers/container-init" }}
         env:
         {{- if .Values.http_proxy }}
         - name: HTTP_PROXY
