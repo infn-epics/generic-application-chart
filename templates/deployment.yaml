@@ -92,6 +92,12 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /tmp
+        {{- if .Values.nfsMounts }}
+        {{- range .Values.nfsMounts }}
+        - name: {{ .name }}-nfs
+          mountPath: {{ .mountPath }}
+        {{- end }}
+        {{- end }}
     {{ end }}
     {{ if .Values.gitRepoApp.url }}
       - name: init-app-container-git
@@ -159,6 +165,12 @@ spec:
         volumeMounts:
         - name: app-volume
           mountPath: /tmp
+        {{- if .Values.nfsMounts }}
+        {{- range .Values.nfsMounts }}
+        - name: {{ .name }}-nfs
+          mountPath: {{ .mountPath }}
+        {{- end }}
+        {{- end }}
     
     {{- end }}
     {{- end }}
@@ -166,7 +178,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}{{- if not (contains ":" .Values.image.repository) }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{- end }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
           {{- if .Values.http_proxy }}
@@ -206,6 +218,12 @@ spec:
             - name: config-volume
               mountPath: /config
           {{- end}}
+          {{- if .Values.nfsMounts }}
+          {{- range .Values.nfsMounts }}
+          - name: {{ .name }}-nfs
+            mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- end }}
           {{- if .Values.service.ports }}
           {{- if gt (len .Values.service.ports) 0 }}
           ports:
@@ -238,4 +256,19 @@ spec:
       {{- if .Values.gitRepoApp.url}}
         - name: app-volume
           emptyDir: {}
+      {{- end }}
+      {{- if .Values.nfsMounts }}
+      {{- range .Values.nfsMounts }}
+      - name: {{ .name }}-nfs
+        nfs:
+          server: {{ .server }}
+          path: {{ .path }}
+          {{- if .opt }}
+          mountOptions:
+            {{- $opts := splitList " " (trimPrefix "-o " .opt) }}
+            {{- range $opts }}
+            - {{ . | trim }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
       {{- end }}
