@@ -26,6 +26,7 @@ spec:
           serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          restartPolicy: {{ (get (default (dict) .Values.cronJob) "restartPolicy") | default "OnFailure" }}
           {{- include "generic-application-chart._initContainers" . | nindent 10 }}
           {{- include "generic-application-chart._containers" . | nindent 10 }}
           {{- include "generic-application-chart._podNodeAffinityTolerations" . | nindent 10 }}
