@@ -1,0 +1,310 @@
+{{- /* Conditional rendering: CronJob if schedule set, else Deployment */ -}}
+{{- if .Values.schedule }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "generic-application-chart.fullname" . }}
+  labels:
+    {{- include "generic-application-chart.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          labels:
+            {{- include "generic-application-chart.selectorLabels" . | nindent 12 }}
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- include "generic-application-chart._initContainers" . | nindent 10 }}
+          {{- include "generic-application-chart._containers" . | nindent 10 }}
+          {{- include "generic-application-chart._podNodeAffinityTolerations" . | nindent 10 }}
+          {{- include "generic-application-chart._volumes" . | nindent 10 }}
+{{- else }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "generic-application-chart.fullname" . }}
+  labels:
+    {{- include "generic-application-chart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "generic-application-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "generic-application-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "generic-application-chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- include "generic-application-chart._initContainers" . | nindent 6 }}
+      {{- include "generic-application-chart._containers" . | nindent 6 }}
+      {{- include "generic-application-chart._podNodeAffinityTolerations" . | nindent 6 }}
+      {{- include "generic-application-chart._volumes" . | nindent 6 }}
+{{- end }}
+
+{{- /* Shared blocks */ -}}
+{{- define "generic-application-chart._initContainers" -}}
+{{- if or .Values.gitRepoApp.url .Values.gitRepoConfig.url }}
+initContainers:
+  {{- if .Values.gitRepoConfig.url }}
+  - name: init-config-container-git
+    image: {{ .Values.initimage | default "baltig.infn.it:4567/epics-containers/container-init" }}
+    env:
+      {{- if .Values.http_proxy }}
+      - name: HTTP_PROXY
+        value: {{ .Values.http_proxy | quote }}
+      {{- end }}
+      {{- if .Values.https_proxy }}
+      - name: HTTPS_PROXY
+        value: {{ .Values.https_proxy | quote }}
+      {{- end }}
+      {{- if .Values.no_proxy }}
+      - name: NO_PROXY
+        value: {{ .Values.no_proxy | quote }}
+      {{- end }}
+    command:
+      - sh
+      - -c
+      - |
+        id=`id`
+        cd /tmp
+        ls -latr
+        echo "ID $id repository {{ .Values.gitRepoConfig.url }} path: {{ .Values.gitRepoConfig.path}} "
+        if [ -d temp-config ]; then
+          rm -rf temp-config
+        fi
+        if [ -n "{{ .Values.gitRepoConfig.token }}" ]; then
+          echo "Cloning repository using Personal Access Token"
+          if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
+            git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+          else
+            git clone --depth 1 https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+          fi
+        else
+          echo "Cloning repository unauthenticated"
+          if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
+            git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+          else
+            git clone --depth 1 {{ .Values.gitRepoConfig.url }} --recurse-submodules temp-config
+          fi
+        fi
+        if [ -d temp-config/{{ .Values.gitRepoConfig.path}} ]; then
+          if [ "{{ .Values.gitRepoConfig.path }}" = "." ]; then
+            mv temp-config/* /tmp/
+          else
+            mv temp-config/{{ .Values.gitRepoConfig.path}}/* /tmp/
+            rm -rf temp-config
+          fi
+        else
+          mv temp-config/* /tmp/
+        fi
+        ls /tmp
+        {{- if .Values.gitRepoConfig.exec }}
+        {{ .Values.gitRepoConfig.exec }}
+        {{- end }}
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - name: config-volume
+        mountPath: /tmp
+      {{- if .Values.nfsMounts }}
+      {{- range .Values.nfsMounts }}
+      - name: {{ .name }}-nfs
+        mountPath: {{ .mountPath }}
+      {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- if .Values.gitRepoApp.url }}
+  - name: init-app-container-git
+    image: {{ .Values.initimage | default "baltig.infn.it:4567/epics-containers/container-init" }}
+    env:
+      {{- if .Values.http_proxy }}
+      - name: HTTP_PROXY
+        value: {{ .Values.http_proxy | quote }}
+      {{- end }}
+      {{- if .Values.https_proxy }}
+      - name: HTTPS_PROXY
+        value: {{ .Values.https_proxy | quote }}
+      {{- end }}
+      {{- if .Values.no_proxy }}
+      - name: NO_PROXY
+        value: {{ .Values.no_proxy | quote }}
+      {{- end }}
+    command:
+      - sh
+      - -c
+      - |
+        id=`id`
+        cd /tmp
+        ls -latr
+        echo "ID $id repository {{ .Values.gitRepoApp.url }} "
+        if [ -d temp-config ]; then
+          rm -rf temp-config
+        fi
+        if [ -n "{{ .Values.gitRepoApp.token }}" ]; then
+          echo "Cloning repository using Personal Access Token"
+          if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
+            git clone --depth 1 -b {{ .Values.gitRepoApp.branch }} https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+          else
+            git clone --depth 1 https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+          fi
+        else
+          echo "Cloning repository unauthenticated"
+          if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
+            git clone --depth 1 -b {{ .Values.gitRepoApp.branch }} {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+          else
+            git clone --depth 1 {{ .Values.gitRepoApp.url }} --recurse-submodules temp-config
+          fi
+        fi
+        if [ -d temp-config/{{ .Values.gitRepoApp.path}} ]; then
+          if [ "{{ .Values.gitRepoApp.path }}" = "." ]; then
+            mv temp-config/* /tmp/
+          else
+            mv temp-config/{{ .Values.gitRepoApp.path}}/* /tmp/
+            rm -rf temp-config
+          fi
+        else
+          mv temp-config/* /tmp/
+        fi
+        # chmod a+w,a+r -R /tmp
+        ls /tmp
+        {{- if .Values.gitRepoApp.exec }}
+        {{ .Values.gitRepoApp.exec }}
+        {{- end }}
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - name: app-volume
+        mountPath: /tmp
+      {{- if .Values.nfsMounts }}
+      {{- range .Values.nfsMounts }}
+      - name: {{ .name }}-nfs
+        mountPath: {{ .mountPath }}
+      {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "generic-application-chart._containers" -}}
+containers:
+  - name: {{ .Chart.Name }}
+    image: "{{ .Values.image.repository }}{{- if not (contains ":" .Values.image.repository) }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{- end }}"
+    imagePullPolicy: {{ .Values.image.pullPolicy }}
+    env:
+      {{- if .Values.http_proxy }}
+      - name: HTTP_PROXY
+        value: {{ .Values.http_proxy | quote }}
+      {{- end }}
+      {{- if .Values.https_proxy }}
+      - name: HTTPS_PROXY
+        value: {{ .Values.https_proxy | quote }}
+      {{- end }}
+      {{- if .Values.no_proxy }}
+      - name: NO_PROXY
+        value: {{ .Values.no_proxy | quote }}
+      {{- end }}
+      {{- range $envVar := .Values.env }}
+      - name: {{ $envVar.name }}
+        value: {{ $envVar.value | quote }}
+      {{- end }}
+    {{- if .Values.exec }}
+    command:
+      - sh
+      - -c
+      - |
+        {{- if .Values.gitRepoApp.url }}
+        cd /app
+        {{- end }}
+        {{ .Values.exec | nindent 8 }}
+    {{- end }}
+    volumeMounts:
+      {{- if .Values.gitRepoApp.url }}
+      - name: app-volume
+        # if defined gitRepoApp.mountPath use it, else default to /app
+        mountPath: {{ .Values.gitRepoApp.mountPath | default "/app" }}
+      {{- end }}
+      {{- if .Values.gitRepoConfig.url }}
+      - name: config-volume
+        mountPath: /config
+      {{- end }}
+      {{- if .Values.nfsMounts }}
+{{- range .Values.nfsMounts }}
+{{ printf "- name: %s-nfs\n  mountPath: %s" .name .mountPath | nindent 6 }}
+{{- end }}
+      {{- end }}
+    {{- if and .Values.service.ports (gt (len .Values.service.ports) 0) }}
+    ports:
+      {{- range .Values.service.ports }}
+      - name: {{ .targetname }}
+        containerPort: {{ .targetport }}
+        protocol: {{ .protocol }}
+      {{- end }}
+    {{- end }}
+    resources:
+      {{- toYaml .Values.resources | nindent 6 }}
+{{- end }}
+
+{{- define "generic-application-chart._podNodeAffinityTolerations" -}}
+{{- with .Values.nodeSelector }}
+nodeSelector:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.affinity }}
+affinity:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.tolerations }}
+tolerations:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- define "generic-application-chart._volumes" -}}
+volumes:
+  {{- if .Values.gitRepoConfig.url }}
+  - name: config-volume
+    emptyDir: {}
+  {{- end }}
+  {{- if .Values.gitRepoApp.url }}
+  - name: app-volume
+    emptyDir: {}
+  {{- end }}
+  {{- if .Values.nfsMounts }}
+  {{- range .Values.nfsMounts }}
+  - name: {{ .name }}-nfs
+    nfs:
+      server: {{ .server }}
+      path: {{ .path }}
+      {{- if .opt }}
+      mountOptions:
+        {{- $opts := splitList " " (trimPrefix "-o " .opt) }}
+        {{- range $opts }}
+        - {{ . | trim }}
+        {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
