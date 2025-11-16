@@ -236,9 +236,6 @@ containers:
       - sh
       - -c
       - |
-        {{- if .Values.gitRepoApp.url }}
-        cd /app
-        {{- end }}
         {{ .Values.exec | nindent 8 }}
     {{- end }}
     volumeMounts:
