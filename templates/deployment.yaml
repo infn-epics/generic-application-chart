@@ -1,10 +1,21 @@
+{{ if .Values.schedule }}
+apiVersion: batch/v1
+kind: CronJob
+{{ else }}
 apiVersion: apps/v1
 kind: Deployment
+{{ end }}
 metadata:
   name: {{ include "generic-application-chart.fullname" . }}
   labels:
     {{- include "generic-application-chart.labels" . | nindent 4 }}
 spec:
+{{ if .Values.schedule }}
+  schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+{{ else }}
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
@@ -12,6 +23,7 @@ spec:
     matchLabels:
       {{- include "generic-application-chart.selectorLabels" . | nindent 6 }}
   template:
+{{ end }}
     metadata:
       {{- with .Values.podAnnotations }}
       annotations:
