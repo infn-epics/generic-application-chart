@@ -212,7 +212,8 @@ spec:
 
           {{- if .Values.gitRepoApp.url}}
             - name: app-volume
-              mountPath: /app
+            ## if defined gitRepoApp.mountPath use it, else default to /app
+              mountPath: {{ .Values.gitRepoApp.mountPath | default "/app" }}
           {{- end}}
           {{- if .Values.gitRepoConfig.url }}
             - name: config-volume
