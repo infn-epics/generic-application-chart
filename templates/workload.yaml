@@ -248,6 +248,12 @@ containers:
       - name: config-volume
         mountPath: /config
       {{- end }}
+      {{- if .Values.epicsConfiguration.name }}
+      - name: beamline-config
+        mountPath: /etc/epik8s-beamline.yaml
+        subPath: epik8s-beamline.yaml
+        readOnly: true
+      {{- end }}
       {{- if .Values.nfsMounts }}
 {{- range .Values.nfsMounts }}
 {{ printf "- name: %s-nfs\n  mountPath: %s" .name .mountPath | nindent 6 }}
@@ -289,6 +295,14 @@ volumes:
   {{- if .Values.gitRepoApp.url }}
   - name: app-volume
     emptyDir: {}
+  {{- end }}
+  {{- if .Values.epicsConfiguration.name }}
+  - name: beamline-config
+    configMap:
+      name: {{ .Values.epicsConfiguration.name }}
+      items:
+      - key: {{ .Values.beamline }}-configuration.yaml
+        path: epik8s-beamline.yaml
   {{- end }}
   {{- if .Values.nfsMounts }}
   {{- range .Values.nfsMounts }}
