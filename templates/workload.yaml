@@ -98,12 +98,17 @@ initContainers:
         if [ -d temp-config ]; then
           rm -rf temp-config
         fi
-        if [ -n "{{ .Values.gitRepoConfig.token }}" ]; then
+        {{- if .Values.gitRepoConfig.secret }}
+        TOKEN=$(cat /secrets/config/{{ .Values.gitRepoConfig.secretKey | default "token" }})
+        {{- else }}
+        TOKEN="{{ .Values.gitRepoConfig.token }}"
+        {{- end }}
+        if [ -n "$TOKEN" ]; then
           echo "Cloning repository using Personal Access Token"
           if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
-            git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+            git clone --depth 1 -b {{ .Values.gitRepoConfig.branch }} https://oauth2:$TOKEN@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
           else
-            git clone --depth 1 https://oauth2:{{ .Values.gitRepoConfig.token }}@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
+            git clone --depth 1 https://oauth2:$TOKEN@{{ .Values.gitRepoConfig.url | replace "https://" "" }} --recurse-submodules temp-config
           fi
         else
           echo "Cloning repository unauthenticated"
@@ -131,6 +136,11 @@ initContainers:
     volumeMounts:
       - name: config-volume
         mountPath: /tmp
+      {{- if .Values.gitRepoConfig.secret }}
+      - name: git-config-secret
+        mountPath: /secrets/config
+        readOnly: true
+      {{- end }}
       {{- if .Values.nfsMounts }}
       {{- range .Values.nfsMounts }}
       - name: {{ .name }}-nfs
@@ -165,12 +175,17 @@ initContainers:
         if [ -d temp-config ]; then
           rm -rf temp-config
         fi
-        if [ -n "{{ .Values.gitRepoApp.token }}" ]; then
+        {{- if .Values.gitRepoApp.secret }}
+        TOKEN=$(cat /secrets/app/{{ .Values.gitRepoApp.secretKey | default "token" }})
+        {{- else }}
+        TOKEN="{{ .Values.gitRepoApp.token }}"
+        {{- end }}
+        if [ -n "$TOKEN" ]; then
           echo "Cloning repository using Personal Access Token"
           if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
-            git clone --depth 1 -b {{ .Values.gitRepoApp.branch }} https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+            git clone --depth 1 -b {{ .Values.gitRepoApp.branch }} https://oauth2:$TOKEN@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
           else
-            git clone --depth 1 https://oauth2:{{ .Values.gitRepoApp.token }}@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
+            git clone --depth 1 https://oauth2:$TOKEN@{{ .Values.gitRepoApp.url | replace "https://" "" }} --recurse-submodules temp-config
           fi
         else
           echo "Cloning repository unauthenticated"
@@ -199,6 +214,11 @@ initContainers:
     volumeMounts:
       - name: app-volume
         mountPath: /tmp
+      {{- if .Values.gitRepoApp.secret }}
+      - name: git-app-secret
+        mountPath: /secrets/app
+        readOnly: true
+      {{- end }}
       {{- if .Values.nfsMounts }}
       {{- range .Values.nfsMounts }}
       - name: {{ .name }}-nfs
@@ -292,9 +312,19 @@ volumes:
   - name: config-volume
     emptyDir: {}
   {{- end }}
+  {{- if .Values.gitRepoConfig.secret }}
+  - name: git-config-secret
+    secret:
+      secretName: {{ .Values.gitRepoConfig.secret }}
+  {{- end }}
   {{- if .Values.gitRepoApp.url }}
   - name: app-volume
     emptyDir: {}
+  {{- end }}
+  {{- if .Values.gitRepoApp.secret }}
+  - name: git-app-secret
+    secret:
+      secretName: {{ .Values.gitRepoApp.secret }}
   {{- end }}
   {{- if .Values.epicsConfiguration.name }}
   - name: beamline-config
