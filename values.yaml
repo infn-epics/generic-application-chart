@@ -74,6 +74,11 @@ resources: {}
 #       cpu: 100m
 #       memory: 128Mi
 
+# Optional Kubernetes health probes for the main application container.
+startupProbe: {}
+readinessProbe: {}
+livenessProbe: {}
+
 autoscaling:
   enabled: false
   minReplicas: 1

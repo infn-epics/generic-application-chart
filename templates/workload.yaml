@@ -287,6 +287,18 @@ containers:
         protocol: {{ .protocol }}
       {{- end }}
     {{- end }}
+    {{- with .Values.startupProbe }}
+    startupProbe:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.readinessProbe }}
+    readinessProbe:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.livenessProbe }}
+    livenessProbe:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     resources:
       {{- toYaml .Values.resources | nindent 6 }}
 {{- end }}
