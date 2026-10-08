@@ -103,6 +103,10 @@ initContainers:
         {{- else }}
         TOKEN="{{ .Values.gitRepoConfig.token }}"
         {{- end }}
+        {{- if .Values.git_credentials_secret }}
+        # Per-URL-prefix tokens (gitconfig key of the git_credentials_secret Secret); ignored by git if absent
+        git config --global include.path /etc/git-credentials/gitconfig
+        {{- end }}
         if [ -n "$TOKEN" ]; then
           echo "Cloning repository using Personal Access Token"
           if [ -n "{{ .Values.gitRepoConfig.branch }}" ]; then
@@ -139,6 +143,11 @@ initContainers:
       {{- if .Values.gitRepoConfig.secret }}
       - name: git-config-secret
         mountPath: /secrets/config
+        readOnly: true
+      {{- end }}
+      {{- if .Values.git_credentials_secret }}
+      - name: git-credentials
+        mountPath: /etc/git-credentials
         readOnly: true
       {{- end }}
       {{- if .Values.nfsMounts }}
@@ -180,6 +189,10 @@ initContainers:
         {{- else }}
         TOKEN="{{ .Values.gitRepoApp.token }}"
         {{- end }}
+        {{- if .Values.git_credentials_secret }}
+        # Per-URL-prefix tokens (gitconfig key of the git_credentials_secret Secret); ignored by git if absent
+        git config --global include.path /etc/git-credentials/gitconfig
+        {{- end }}
         if [ -n "$TOKEN" ]; then
           echo "Cloning repository using Personal Access Token"
           if [ -n "{{ .Values.gitRepoApp.branch }}" ]; then
@@ -217,6 +230,11 @@ initContainers:
       {{- if .Values.gitRepoApp.secret }}
       - name: git-app-secret
         mountPath: /secrets/app
+        readOnly: true
+      {{- end }}
+      {{- if .Values.git_credentials_secret }}
+      - name: git-credentials
+        mountPath: /etc/git-credentials
         readOnly: true
       {{- end }}
       {{- if .Values.nfsMounts }}
@@ -337,6 +355,13 @@ volumes:
   - name: git-app-secret
     secret:
       secretName: {{ .Values.gitRepoApp.secret }}
+  {{- end }}
+  {{- if .Values.git_credentials_secret }}
+  - name: git-credentials
+    secret:
+      secretName: {{ .Values.git_credentials_secret | quote }}
+      optional: true
+      defaultMode: 0444
   {{- end }}
   {{- if .Values.epicsConfiguration.name }}
   - name: beamline-config

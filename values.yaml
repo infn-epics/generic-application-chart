@@ -108,6 +108,12 @@ gitRepoConfig:
   size: 8Mi
   token:
 
+## Optional Secret with one token per Git URL prefix (key "gitconfig" + one
+## git-credential-store file per token), mounted at /etc/git-credentials and
+## included by both clone init containers. Also covers private submodules,
+## which gitRepoApp/gitRepoConfig token/secret do not. Unset = disabled.
+# git_credentials_secret: epik8s-git-credentials
+
 staticIP:
 exec: |
       if [ -x /app/start.sh ] ; then
